@@ -8,10 +8,11 @@ bundles = ""
 filePrefix = os.environ['HOME'].strip()
 comment = '{1}Bundle \'{0}\' {1:>{width}}{2}\n'
 bundler = 'Bundle \'{0}\'\n'
-
+print("Getting info for bundle")
 with open(filePrefix + '/.vim/bundle-names.list' , 'r') as f:
     for line in f:
         line_strip = line.strip()
+        print("Getting info for: " + line_strip )
         radj = 40 - len(line_strip)
         r = requests.get("https://www.github.com/"+line_strip)
         data = r.content
@@ -30,13 +31,14 @@ bund_list = bundles.split('\n')
                                                                                                     
 desc_list.sort(key=str.lower)
 bund_list.sort(key=str.lower)
-                                                                                                                            
+
+print("Writing to file")
 #Open file for writing
 with open(filePrefix + '/.vim/plugins.vim', 'w') as f:
     for line in desc_list:
         f.write(line + '\n')
-
-    f.write("\n\n\n\n\n")
+        print("Wrote: " + line )
+    f.write("\n\n")
 
     for line in bund_list:
         f.write(line + '\n') 
