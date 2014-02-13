@@ -14,7 +14,18 @@ with open(filePrefix + '/.vim/bundle-names.list' , 'r') as f:
         line_strip = line.strip()
         print("Getting info for: " + line_strip )
         radj = 40 - len(line_strip)
-        r = requests.get("https://www.github.com/"+line_strip)
+        url = "https://www.github.com/" + line_strip
+        r = requests.get(url)
+        
+        try:
+            r.raise_for_status()
+        except requests.exceptions.HTTPError:
+            sys.stderr.write("Could not fulfill request for: " + url + '\n')
+            continue
+        except:
+            sys.stderr.write("Unexpected error")
+            raise
+
         data = r.content
         soup = BeautifulSoup(data)
         div = soup.find(class_="repository-description")
