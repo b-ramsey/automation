@@ -2,50 +2,27 @@ from bs4 import BeautifulSoup
 import requests
 import io,sys,os
 
-description = ""
-bundles = ""
 
-filePrefix = os.environ['HOME'].strip()
-comment = '{1}Bundle \'{0}\' {1:>{width}}{2}\n'
-bundler = 'Bundle \'{0}\'\n'
-print("Getting info for bundle")
-with open(filePrefix + '/.vim/bundle-names.list' , 'r') as f:
-    for line in f:
-        line_strip = line.strip()
-        print("Getting info for: " + line_strip )
-        radj = 40 - len(line_strip)
-        url = "https://www.github.com/" + line_strip
-        r = requests.get(url)
-        
-        try:
-            r.raise_for_status()
-        except requests.exceptions.HTTPError:
-            sys.stderr.write("Could not fulfill request for: " + url + '\n')
-            continue
-        except:
-            sys.stderr.write("Unexpected error")
-            raise
+def printError(ex):
+    try:
+        sys.stderr.write('{0}({1}):\t{2}'.format(type(ex)._name_, ex.errno, ex.strerror))
+    except AttributeError:
+        sys.stderr.write('HTTP Error({0}): {1}'.format(ex.errno, ex.strerror))
 
-        data = r.content
-        soup = BeautifulSoup(data)
-        div = soup.find(class_="repository-description")
-        if div is not None:
-            desc = div.contents[1]
-            description += comment.format(line_strip, '"', desc.string, width=radj)
-        else:
-            description += line
-        bundles += bundler.format(line_strip)
-                                                                                                                            
-#Sort description and bundles
-desc_list = description.split('\n')
-bund_list = bundles.split('\n')
-                                                                                                    
-desc_list.sort(key=str.lower)
-bund_list.sort(key=str.lower)
+def outputFile(desc, bundles ,filename=os.environ['HOME'].strip()+'/.vim/plugins.vim'):
+    #Open file for writing
+    try:
+        f = open(filename, 'w')
+    except OSError as e:
+        printError(e)
+        raise
+    except:
+        sys.stderr.write('Unexpected error has occured: exiting...')
+        raise
+    
+    desc_list = desc.splitlines()
+    bund_list = bundles.splitlines()
 
-print("Writing to file")
-#Open file for writing
-with open(filePrefix + '/.vim/plugins.vim', 'w') as f:
     for line in desc_list:
         f.write(line + '\n')
         print("Wrote: " + line )
@@ -53,3 +30,68 @@ with open(filePrefix + '/.vim/plugins.vim', 'w') as f:
 
     for line in bund_list:
         f.write(line + '\n') 
+
+def processFile(filename=os.environ['HOME'].strip()+'/.vim/bundle-names.list'):
+    description = ""
+    bundles = ""
+    comment = '{1}Bundle \'{0}\' {1:>{width}}{2}\n'
+    bundler = 'Bundle \'{0}\'\n'
+   #Open the file for reading
+    try:
+        f = open(filename, 'r')
+    except OSError as e:
+        printError(e)
+        raise
+    except:
+        raise
+
+    for line in f:
+        line_strip = line.strip()
+        print("Getting info for: " + line_strip)
+        radj = 40 - len(line_strip)
+        url = "https://www.github.com/" + line_strip
+
+        #Send request for plugin description
+        r = requests.get(url)
+
+        try:
+            r.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            printError(e)
+            continue
+        except:
+            raise
+        
+        data = r.content
+        try:
+            soup = BeautifulSoup(data)
+        except HTMLParser.HTMLParseError as e:
+            printError(e)
+            continue
+        except:
+            raise
+
+        div = soup.find(class_="repository-description")
+        if div is not None:
+            desc = div.contents[1]
+            description += comment.format(line_strip, '"', desc.string, width=radj)
+        else:
+            description += line
+        bundles += bundler.format(line_strip)
+ 
+    return {
+            'description' : description,
+            'bundles'     : bundles
+            }
+
+
+def main():
+    print("Getting info for bundle")
+    procVal = processFile()
+
+
+    print("Writing to file")
+    outputFile(procVal['description'], procVal['bundles'])
+
+
+main()
