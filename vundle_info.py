@@ -2,6 +2,27 @@ from bs4 import BeautifulSoup
 import requests
 import io,sys,os
 
+def getDescription(url):
+    r = requests.get(url)
+
+    try:
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        printError(e)
+        raise Exception(e)
+    except:
+        raise
+    
+    data = r.content
+    try:
+        soup = BeautifulSoup(data)
+    except HTMLParser.HTMLParseError as e:
+        printError(e)
+    except:
+        raise
+
+    return soup.find(class_="repository-description")
+
 
 def printError(ex):
     try:
@@ -51,27 +72,11 @@ def processFile(filename=os.environ['HOME'].strip()+'/.vim/bundle-names.list'):
         radj = 40 - len(line_strip)
         url = "https://www.github.com/" + line_strip
 
-        #Send request for plugin description
-        r = requests.get(url)
-
         try:
-            r.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            printError(e)
+            div = getDescription(url)
+        except Exception as e:
             continue
-        except:
-            raise
-        
-        data = r.content
-        try:
-            soup = BeautifulSoup(data)
-        except HTMLParser.HTMLParseError as e:
-            printError(e)
-            continue
-        except:
-            raise
 
-        div = soup.find(class_="repository-description")
         if div is not None:
             desc = div.contents[1]
             description += comment.format(line_strip, '"', desc.string, width=radj)
