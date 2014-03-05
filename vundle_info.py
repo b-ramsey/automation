@@ -94,7 +94,6 @@ def main():
     print("Getting info for bundle")
     procVal = processFile()
 
-
     print("Writing to file")
     outputFile(procVal['description'], procVal['bundles'])
 
