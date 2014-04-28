@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from bs4 import BeautifulSoup
 import requests
 import io,sys,os
@@ -30,7 +32,7 @@ def printError(ex):
     except AttributeError:
         sys.stderr.write('HTTP Error({0}): {1}'.format(ex.errno, ex.strerror))
 
-def outputFile(desc, bundles ,filename=os.environ['HOME'].strip()+'/.vim/plugins.vim'):
+def outputFile(desc, bundles ,filename):
     #Open file for writing
     try:
         f = open(filename, 'w')
@@ -52,7 +54,7 @@ def outputFile(desc, bundles ,filename=os.environ['HOME'].strip()+'/.vim/plugins
     for line in bund_list:
         f.write(line + '\n') 
 
-def processFile(filename=os.environ['HOME'].strip()+'/.vim/bundle-names.list'):
+def processFile(filename):
     description = ""
     bundles = ""
     comment = '{1}Bundle \'{0}\' {1:>{width}}{2}\n'
@@ -90,12 +92,17 @@ def processFile(filename=os.environ['HOME'].strip()+'/.vim/bundle-names.list'):
             }
 
 
-def main():
+if __name__ == "__main__":
     print("Getting info for bundle")
-    procVal = processFile()
+    if len(sys.argv) != 3:
+        raise
+    
+    infile = sys.argv[1]
+    outfile = sys.argv[2]
+
+    procVal = processFile(infile)
 
     print("Writing to file")
-    outputFile(procVal['description'], procVal['bundles'])
+    outputFile(procVal['description'], procVal['bundles'],outfile)
 
 
-main()
