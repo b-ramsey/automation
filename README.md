@@ -4,5 +4,5 @@ A python script which takes as an input a file which lists a series of plugins f
 
 Usage
 -----
-python vundle_info.py <input_file> <output_file>
+python vundle_info.py \<input_file\> \<output_file\>
 
