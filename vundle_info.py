@@ -33,26 +33,20 @@ def printError(ex):
         sys.stderr.write('HTTP Error({0}): {1}'.format(ex.errno, ex.strerror))
 
 def outputFile(desc, bundles ,filename):
-    #Open file for writing
-    try:
-        f = open(filename, 'w')
-    except OSError as e:
-        printError(e)
-        raise
-    except:
-        sys.stderr.write('Unexpected error has occured: exiting...')
-        raise
-    
     desc_list = desc.splitlines()
     bund_list = bundles.splitlines()
 
-    for line in desc_list:
-        f.write(line + '\n')
-        print("Wrote: " + line )
-    f.write("\n\n")
+    with open(filename, 'w') as f:
+        #Write descriptions
+        for line in desc_list:
+            f.write(line + '\n')
+            print("Wrote: " + line )
+        f.write("\n\n")
+        
+        #Write bundles
+        for line in bund_list:
+            f.write(line + '\n') 
 
-    for line in bund_list:
-        f.write(line + '\n') 
 
 def processFile(filename):
     description = ""
@@ -60,32 +54,25 @@ def processFile(filename):
     comment = '{1}Bundle \'{0}\' {1:>{width}}{2}\n'
     bundler = 'Bundle \'{0}\'\n'
    #Open the file for reading
-    try:
-        f = open(filename, 'r')
-    except OSError as e:
-        printError(e)
-        raise
-    except:
-        raise
+    with open(filename, 'r') as f:
+        for line in f:
+            line_strip = line.strip()
+            print("Getting info for: " + line_strip)
+            radj = 40 - len(line_strip)
+            url = "https://www.github.com/" + line_strip
 
-    for line in f:
-        line_strip = line.strip()
-        print("Getting info for: " + line_strip)
-        radj = 40 - len(line_strip)
-        url = "https://www.github.com/" + line_strip
+            try:
+                div = getDescription(url)
+            except Exception as e:
+                continue
 
-        try:
-            div = getDescription(url)
-        except Exception as e:
-            continue
-
-        if div is not None:
-            desc = div.contents[1]
-            description += comment.format(line_strip, '"', desc.string, width=radj)
-        else:
-            description += line
-        bundles += bundler.format(line_strip)
- 
+            if div is not None:
+                desc = div.contents[1]
+                description += comment.format(line_strip, '"', desc.string, width=radj)
+            else:
+                description += line
+            bundles += bundler.format(line_strip)
+    
     return {
             'description' : description,
             'bundles'     : bundles
